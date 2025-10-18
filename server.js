@@ -122,13 +122,15 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/messages', require('./routes/messages'));
-app.use('/api/bot', require('./routes/bot'));
 app.use('/api/products', require('./routes/products'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/images', require('./routes/images'));
 app.use('/api/analytics', require('./routes/analytics'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/webhooks', require('./routes/webhooks'));
+
+// Optional routes (can be added later)
+// app.use('/api/orders', require('./routes/orders'));
+// app.use('/api/images', require('./routes/images'));
+// app.use('/api/bot', require('./routes/bot'));
+// app.use('/api/notifications', require('./routes/notifications'));
+// app.use('/api/webhooks', require('./routes/webhooks'));
 
 // ============================================
 // Health Check & API Documentation
