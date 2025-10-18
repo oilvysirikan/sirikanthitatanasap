@@ -1,134 +1,158 @@
 /**
- * 👥 Customers Routes
- * CRUD operations, search, analytics
+ * Customer Routes - Simplified without auth
  */
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const { validateCustomer, validateSearch } = require('../middleware/validation');
-const customerController = require('../controllers/customerController');
 
-// ============================================
-// 📋 CRUD Operations
-// ============================================
+// Mock data
+let customers = [
+    {
+        id: 1,
+        name: 'สมชาย ใจดี',
+        email: 'somchai@example.com',
+        phone: '0812345678',
+        channel: 'line',
+        segment: 'active',
+        total_orders: 15,
+        total_spent: 45000,
+        last_contact_at: new Date().toISOString()
+    },
+    {
+        id: 2,
+        name: 'สมหญิง รักดี',
+        email: 'somying@example.com',
+        phone: '0823456789',
+        channel: 'facebook',
+        segment: 'loyal',
+        total_orders: 25,
+        total_spent: 75000,
+        last_contact_at: new Date().toISOString()
+    },
+    {
+        id: 3,
+        name: 'ทดสอบ ระบบ',
+        email: 'test@example.com',
+        phone: '0834567890',
+        channel: 'web',
+        segment: 'new',
+        total_orders: 0,
+        total_spent: 0,
+        last_contact_at: new Date().toISOString()
+    }
+];
 
-// Get all customers with filtering and pagination
-router.get('/', auth, validateSearch, customerController.getCustomers);
+// Get all customers
+router.get('/', (req, res) => {
+    try {
+        const { page = 1, limit = 20, segment, channel, search } = req.query;
+        
+        let filtered = [...customers];
+        
+        // Filter by segment
+        if (segment && segment !== '') {
+            filtered = filtered.filter(c => c.segment === segment);
+        }
+        
+        // Filter by channel
+        if (channel && channel !== '') {
+            filtered = filtered.filter(c => c.channel === channel);
+        }
+        
+        // Search
+        if (search && search !== '') {
+            const searchLower = search.toLowerCase();
+            filtered = filtered.filter(c => 
+                c.name.toLowerCase().includes(searchLower) || 
+                c.email.toLowerCase().includes(searchLower) || 
+                c.phone.includes(search)
+            );
+        }
+        
+        // Pagination
+        const start = (page - 1) * limit;
+        const end = start + parseInt(limit);
+        const paginated = filtered.slice(start, end);
+        
+        res.json({
+            customers: paginated,
+            total: filtered.length,
+            page: parseInt(page),
+            pages: Math.ceil(filtered.length / limit)
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Get customer by ID
-router.get('/:id', auth, customerController.getCustomer);
+router.get('/:id', (req, res) => {
+    try {
+        const customer = customers.find(c => c.id === parseInt(req.params.id));
+        if (!customer) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+        res.json(customer);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-// Create new customer
-router.post('/', auth, validateCustomer, customerController.createCustomer);
+// Create customer
+router.post('/', (req, res) => {
+    try {
+        const newCustomer = {
+            id: customers.length + 1,
+            name: req.body.name,
+            email: req.body.email,
+            phone: req.body.phone,
+            channel: req.body.channel || 'web',
+            segment: 'new',
+            total_orders: 0,
+            total_spent: 0,
+            last_contact_at: new Date().toISOString()
+        };
+        
+        customers.push(newCustomer);
+        res.status(201).json(newCustomer);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Update customer
-router.put('/:id', auth, validateCustomer, customerController.updateCustomer);
+router.put('/:id', (req, res) => {
+    try {
+        const index = customers.findIndex(c => c.id === parseInt(req.params.id));
+        if (index === -1) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+        
+        customers[index] = { 
+            ...customers[index], 
+            ...req.body,
+            id: customers[index].id // Keep original ID
+        };
+        
+        res.json(customers[index]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Delete customer
-router.delete('/:id', auth, customerController.deleteCustomer);
-
-// ============================================
-// 🔍 Search & Filters
-// ============================================
-
-// Search customers by name, email, phone
-router.get('/search/:query', auth, customerController.searchCustomers);
-
-// Get customers by segment
-router.get('/segment/:segment', auth, customerController.getCustomersBySegment);
-
-// Get customers by source
-router.get('/source/:source', auth, customerController.getCustomersBySource);
-
-// Get customers by tags
-router.get('/tags/:tag', auth, customerController.getCustomersByTag);
-
-// ============================================
-// 📊 Customer Relations
-// ============================================
-
-// Get customer orders
-router.get('/:id/orders', auth, customerController.getCustomerOrders);
-
-// Get customer conversations
-router.get('/:id/conversations', auth, customerController.getCustomerConversations);
-
-// Get customer messages
-router.get('/:id/messages', auth, customerController.getCustomerMessages);
-
-// Get customer activity timeline
-router.get('/:id/timeline', auth, customerController.getCustomerTimeline);
-
-// ============================================
-// 🏷️ Tags & Segments Management
-// ============================================
-
-// Add tags to customer
-router.post('/:id/tags', auth, customerController.addCustomerTags);
-
-// Remove tags from customer
-router.delete('/:id/tags', auth, customerController.removeCustomerTags);
-
-// Update customer segment
-router.put('/:id/segment', auth, customerController.updateCustomerSegment);
-
-// ============================================
-// 📝 Notes & Interactions
-// ============================================
-
-// Add customer note
-router.post('/:id/notes', auth, customerController.addCustomerNote);
-
-// Get customer notes
-router.get('/:id/notes', auth, customerController.getCustomerNotes);
-
-// Update customer note
-router.put('/:id/notes/:noteId', auth, customerController.updateCustomerNote);
-
-// Delete customer note
-router.delete('/:id/notes/:noteId', auth, customerController.deleteCustomerNote);
-
-// ============================================
-// 📈 Customer Analytics
-// ============================================
-
-// Get customer stats
-router.get('/:id/stats', auth, customerController.getCustomerStats);
-
-// Get customer purchase history
-router.get('/:id/purchase-history', auth, customerController.getPurchaseHistory);
-
-// Get customer behavior analytics
-router.get('/:id/behavior', auth, customerController.getCustomerBehavior);
-
-// ============================================
-// 📤 Bulk Operations
-// ============================================
-
-// Bulk update customers
-router.put('/bulk/update', auth, customerController.bulkUpdateCustomers);
-
-// Bulk delete customers
-router.delete('/bulk/delete', auth, customerController.bulkDeleteCustomers);
-
-// Bulk export customers
-router.post('/bulk/export', auth, customerController.exportCustomers);
-
-// Bulk import customers
-router.post('/bulk/import', auth, customerController.importCustomers);
-
-// ============================================
-// 🔄 Sync & Integration
-// ============================================
-
-// Sync customer with Shopify
-router.post('/:id/sync/shopify', auth, customerController.syncWithShopify);
-
-// Sync customer with LINE
-router.post('/:id/sync/line', auth, customerController.syncWithLINE);
-
-// Update customer from external source
-router.put('/:id/external-update', auth, customerController.updateFromExternal);
+router.delete('/:id', (req, res) => {
+    try {
+        const index = customers.findIndex(c => c.id === parseInt(req.params.id));
+        if (index === -1) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+        
+        customers.splice(index, 1);
+        res.json({ success: true, message: 'Customer deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 module.exports = router;

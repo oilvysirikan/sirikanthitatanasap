@@ -1,177 +1,112 @@
 /**
- * 💬 Conversations Routes
- * Real-time messaging, conversation management
+ * Conversation Routes
  */
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const conversationController = require('../controllers/conversationController');
 
-// ============================================
-// 💬 Conversation Management
-// ============================================
+// Mock conversations
+let conversations = [
+    {
+        id: 1,
+        customer_id: 1,
+        customer_name: 'สมชาย ใจดี',
+        channel: 'line',
+        status: 'active',
+        last_message: 'สวัสดีครับ',
+        unread_count: 2,
+        updated_at: new Date().toISOString()
+    },
+    {
+        id: 2,
+        customer_id: 2,
+        customer_name: 'สมหญิง รักดี',
+        channel: 'facebook',
+        status: 'active',
+        last_message: 'สินค้ามีสต็อกไหมคะ',
+        unread_count: 0,
+        updated_at: new Date(Date.now() - 3600000).toISOString()
+    }
+];
 
-// Get all conversations with filters
-router.get('/', auth, conversationController.getConversations);
+// Mock messages
+let messages = [
+    {
+        id: 1,
+        conversation_id: 1,
+        sender_type: 'customer',
+        message_type: 'text',
+        content: 'สวัสดีครับ',
+        created_at: new Date(Date.now() - 7200000).toISOString()
+    },
+    {
+        id: 2,
+        conversation_id: 1,
+        sender_type: 'agent',
+        message_type: 'text',
+        content: 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ',
+        created_at: new Date(Date.now() - 3600000).toISOString()
+    }
+];
+
+// Get all conversations
+router.get('/', (req, res) => {
+    const { status } = req.query;
+    
+    let filtered = conversations;
+    if (status && status !== '') {
+        filtered = conversations.filter(c => c.status === status);
+    }
+    
+    res.json({
+        conversations: filtered,
+        total: filtered.length,
+        active_count: conversations.filter(c => c.status === 'active').length,
+        closed_count: conversations.filter(c => c.status === 'closed').length
+    });
+});
 
 // Get conversation by ID
-router.get('/:id', auth, conversationController.getConversation);
+router.get('/:id', (req, res) => {
+    const conversation = conversations.find(c => c.id === parseInt(req.params.id));
+    if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+    }
+    res.json(conversation);
+});
 
-// Create new conversation
-router.post('/', auth, conversationController.createConversation);
-
-// Update conversation
-router.put('/:id', auth, conversationController.updateConversation);
-
-// Close conversation
-router.put('/:id/close', auth, conversationController.closeConversation);
-
-// Reopen conversation
-router.put('/:id/reopen', auth, conversationController.reopenConversation);
-
-// Transfer conversation to another agent
-router.put('/:id/transfer', auth, conversationController.transferConversation);
-
-// ============================================
-// 📝 Messages
-// ============================================
-
-// Get messages in conversation
-router.get('/:id/messages', auth, conversationController.getMessages);
+// Get messages
+router.get('/:id/messages', (req, res) => {
+    const conversationMessages = messages.filter(
+        m => m.conversation_id === parseInt(req.params.id)
+    );
+    res.json(conversationMessages);
+});
 
 // Send message
-router.post('/:id/messages', auth, conversationController.sendMessage);
+router.post('/:id/messages', (req, res) => {
+    const newMessage = {
+        id: messages.length + 1,
+        conversation_id: parseInt(req.params.id),
+        sender_type: req.body.sender_type || 'agent',
+        message_type: req.body.message_type || 'text',
+        content: req.body.content,
+        created_at: new Date().toISOString()
+    };
+    
+    messages.push(newMessage);
+    res.status(201).json(newMessage);
+});
 
-// Edit message
-router.put('/:id/messages/:messageId', auth, conversationController.editMessage);
-
-// Delete message
-router.delete('/:id/messages/:messageId', auth, conversationController.deleteMessage);
-
-// Mark messages as read
-router.put('/:id/messages/mark-read', auth, conversationController.markMessagesAsRead);
-
-// Get message by ID
-router.get('/:id/messages/:messageId', auth, conversationController.getMessage);
-
-// ============================================
-// 📎 File Attachments
-// ============================================
-
-// Upload file to conversation
-router.post('/:id/upload', auth, conversationController.uploadFile);
-
-// Get file attachments
-router.get('/:id/files', auth, conversationController.getFiles);
-
-// Delete file attachment
-router.delete('/:id/files/:fileId', auth, conversationController.deleteFile);
-
-// ============================================
-// 🏷️ Conversation Metadata
-// ============================================
-
-// Add tags to conversation
-router.post('/:id/tags', auth, conversationController.addTags);
-
-// Remove tags from conversation
-router.delete('/:id/tags', auth, conversationController.removeTags);
-
-// Update conversation priority
-router.put('/:id/priority', auth, conversationController.updatePriority);
-
-// Set conversation category
-router.put('/:id/category', auth, conversationController.setCategory);
-
-// Add internal notes
-router.post('/:id/notes', auth, conversationController.addInternalNote);
-
-// ============================================
-// ⭐ Satisfaction & Feedback
-// ============================================
-
-// Submit satisfaction rating
-router.post('/:id/satisfaction', conversationController.submitSatisfaction);
-
-// Get satisfaction feedback
-router.get('/:id/satisfaction', auth, conversationController.getSatisfaction);
-
-// Update satisfaction rating
-router.put('/:id/satisfaction', auth, conversationController.updateSatisfaction);
-
-// ============================================
-// 🤖 Bot Integration
-// ============================================
-
-// Send bot message
-router.post('/:id/bot-message', auth, conversationController.sendBotMessage);
-
-// Trigger bot intent
-router.post('/:id/bot-intent', auth, conversationController.triggerBotIntent);
-
-// Get bot suggestions
-router.get('/:id/bot-suggestions', auth, conversationController.getBotSuggestions);
-
-// Train bot from conversation
-router.post('/:id/train-bot', auth, conversationController.trainBotFromConversation);
-
-// ============================================
-// 📊 Conversation Analytics
-// ============================================
-
-// Get conversation statistics
-router.get('/:id/stats', auth, conversationController.getConversationStats);
-
-// Get response time metrics
-router.get('/:id/response-times', auth, conversationController.getResponseTimes);
-
-// Get conversation timeline
-router.get('/:id/timeline', auth, conversationController.getTimeline);
-
-// ============================================
-// 🔄 Real-time Updates
-// ============================================
-
-// Join conversation for real-time updates
-router.post('/:id/join', auth, conversationController.joinConversation);
-
-// Leave conversation
-router.post('/:id/leave', auth, conversationController.leaveConversation);
-
-// Send typing indicator
-router.post('/:id/typing', auth, conversationController.sendTyping);
-
-// ============================================
-// 📤 Export & Share
-// ============================================
-
-// Export conversation transcript
-router.get('/:id/export', auth, conversationController.exportTranscript);
-
-// Share conversation link
-router.post('/:id/share', auth, conversationController.shareConversation);
-
-// Print conversation
-router.get('/:id/print', auth, conversationController.printConversation);
-
-// ============================================
-// 🔍 Search & Filters
-// ============================================
-
-// Search messages in conversation
-router.get('/:id/search/:query', auth, conversationController.searchMessages);
-
-// Filter conversations by status
-router.get('/status/:status', auth, conversationController.getConversationsByStatus);
-
-// Filter conversations by channel
-router.get('/channel/:channel', auth, conversationController.getConversationsByChannel);
-
-// Filter conversations by agent
-router.get('/agent/:agentId', auth, conversationController.getConversationsByAgent);
-
-// Get unassigned conversations
-router.get('/unassigned', auth, conversationController.getUnassignedConversations);
+// Close conversation
+router.put('/:id/close', (req, res) => {
+    const index = conversations.findIndex(c => c.id === parseInt(req.params.id));
+    if (index === -1) {
+        return res.status(404).json({ error: 'Conversation not found' });
+    }
+    
+    conversations[index].status = 'closed';
+    res.json(conversations[index]);
+});
 
 module.exports = router;
