@@ -278,7 +278,6 @@ const startServer = async () => {
 
 // Start the server
 startServer();
-});
 
 // ============================================
 // Graceful Shutdown
