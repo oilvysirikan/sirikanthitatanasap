@@ -24,15 +24,4 @@ redirect_urls = [
   "https://shopify-ai-theme-studio-57f25a48.base44.app/auth/shopify/callback"
 ]
 
-# App Navigation Menu Items
-[[app_navigation]]
-label = "Dashboard"
-destination = "/"
-
-[[app_navigation]]
-label = "Theme Generator"
-destination = "/generate"
-
-[[app_navigation]]
-label = "Settings"
-destination = "/settings"
+# App Navigation is now configured in the Partner Dashboard
