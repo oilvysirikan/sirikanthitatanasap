@@ -1,0 +1,25 @@
+{
+  "name": "ai-theme-assistant",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "scripts": {
+    "shopify": "shopify",
+    "build": "shopify app build",
+    "dev": "shopify app dev",
+    "info": "shopify app info",
+    "generate": "shopify app generate",
+    "deploy": "shopify app deploy"
+  },
+  "dependencies": {
+    "@shopify/polaris": "^13.9.5",
+    "@shopify/polaris-icons": "^9.3.1"
+  },
+  "trustedDependencies": [
+    "@shopify/plugin-cloudflare"
+  ],
+  "author": "sirikanthitatanasap",
+  "private": true,
+  "workspaces": [
+    "extensions/*"
+  ]
+}
